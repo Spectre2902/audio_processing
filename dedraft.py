@@ -14,7 +14,7 @@ import os
 ROOT_DIR = os.getcwd()
 print(ROOT_DIR)
 
-API_KEY = "3qJnghBdbxejGAngEBeApJUaBdzPsnJF"
+API_KEY = "YLbKyqzkET5SFMR37R7JiL4u2YdXQD3U"
 
 def convert_video_to_audio(video_path):
     video = VideoFileClip(video_path)
