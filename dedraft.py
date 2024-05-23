@@ -1,14 +1,12 @@
 import os
-ROOT_DIR = os.getcwd()
-print(ROOT_DIR)
-import streamlit as st
-from moviepy.editor import VideoFileClip
-from pydub import AudioSegment, effects
-from pydub.silence import split_on_silence
 import requests
 import json
 import time
-import os
+import streamlit as st
+from moviepy.editor import VideoFileClip
+import soundfile as sf
+import librosa
+import numpy as np
 
 ### Set ROOT_DIR
 ROOT_DIR = os.getcwd()
@@ -23,24 +21,17 @@ def convert_video_to_audio(video_path):
     return audio_path
 
 def normalize_audio(audio_path):
-    rawsound = AudioSegment.from_file(audio_path, "wav")
-    normalizedsound = effects.normalize(rawsound)
-    out = normalizedsound.export("temp_normalized.wav", format="wav")
-    return out.name
+    y, sr = librosa.load(audio_path, sr=None)
+    y = librosa.util.normalize(y)
+    normalized_audio_path = "temp_normalized.wav"
+    sf.write(normalized_audio_path, y, sr)
+    return normalized_audio_path
 
 def clean_audio(normalized_audio_path):
-    sound = AudioSegment.from_file(normalized_audio_path, format='wav')
-    audio_chunks = split_on_silence(
-        sound,
-        min_silence_len=100,
-        silence_thresh=-45,
-        keep_silence=50
-    )
-    combined = AudioSegment.empty()
-    for chunk in audio_chunks:
-        combined += chunk
+    y, sr = librosa.load(normalized_audio_path, sr=None)
+    y_trimmed, _ = librosa.effects.trim(y)
     cleaned_audio_path = "temp_cleaned.wav"
-    combined.export(cleaned_audio_path, format="wav")
+    sf.write(cleaned_audio_path, y_trimmed, sr)
     return cleaned_audio_path
 
 def upload_to_cleanvoice(cleaned_audio_path):
@@ -63,22 +54,26 @@ def request_cleanvoice_processing(signed_url, config):
     headers = {"Content-Type": "application/json", "X-API-Key": API_KEY}
     response = requests.post(api, data=json.dumps(data), headers=headers)
     response_data = response.json()
-    return response_data['id']
+    print("Response data:", response_data)  # Print the response data to understand its structure
+    return response_data.get('id')
 
 def poll_cleanvoice_status(id):
     status_endpoint = f"https://api.cleanvoice.ai/v2/edits/{id}"
     headers = {"Content-Type": "application/json", "X-API-Key": API_KEY}
-    while True:
-        response = requests.get(status_endpoint, headers=headers)
-        response.raise_for_status()
-        data = response.json()
-        status = data.get('status')
-        progress = data.get('progress')
-        if status in ['SUCCESS', 'FAILED']:
-            return status, data
-        else:
-            st.write(f'Processing: {progress}%')
-            time.sleep(5)
+    
+    # Display a spinner while polling
+    with st.spinner("Processing in progress..."):
+        while True:
+            response = requests.get(status_endpoint, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            status = data.get('status')
+            progress = data.get('progress')
+            if status in ['SUCCESS', 'FAILED']:
+                return status, data
+            else:
+                # Do not print status, Streamlit will display spinner automatically
+                time.sleep(5)
 def main():
     st.title("Audio Processing App")
 
@@ -154,7 +149,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
