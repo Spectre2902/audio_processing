@@ -42,11 +42,21 @@ def normalize_audio(audio_path):
         return None
 
 def clean_audio(normalized_audio_path):
-    y, sr = librosa.load(normalized_audio_path, sr=None)
-    y_trimmed, _ = librosa.effects.trim(y)
-    cleaned_audio_path = "temp_cleaned.wav"
-    sf.write(cleaned_audio_path, y_trimmed, sr)
-    return cleaned_audio_path
+    # Check if the file exists
+    if not os.path.exists(normalized_audio_path):
+        print("Error: File does not exist at path:", normalized_audio_path)
+        return None
+    
+    # Attempt to load the audio file using librosa
+    try:
+        y, sr = librosa.load(normalized_audio_path, sr=None)
+        y_trimmed, _ = librosa.effects.trim(y)
+        cleaned_audio_path = "temp_cleaned.wav"
+        sf.write(cleaned_audio_path, y_trimmed, sr)
+        return cleaned_audio_path
+    except Exception as e:
+        print("Error cleaning audio:", str(e))
+        return None
 
 def upload_to_cleanvoice(cleaned_audio_path):
     url = 'https://api.cleanvoice.ai/v2/upload?filename=audio.wav'
