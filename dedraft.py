@@ -15,11 +15,15 @@ print(ROOT_DIR)
 API_KEY = "YLbKyqzkET5SFMR37R7JiL4u2YdXQD3U"
 
 def convert_video_to_audio(video_path):
-    video = VideoFileClip(video_path)
-    audio_path = "temp_audio.wav"
-    video.audio.write_audiofile(audio_path)
-    return audio_path
-
+    try:
+        video = VideoFileClip(video_path)
+        audio_path = "temp_audio.wav"
+        video.audio.write_audiofile(audio_path, codec='pcm_s16le')  # Specify a compatible codec for WAV format
+        return audio_path
+    except Exception as e:
+        print("Error converting video to audio:", str(e))
+        return None
+        
 def normalize_audio(audio_path):
     y, sr = librosa.load(audio_path, sr=None)
     y = librosa.util.normalize(y)
