@@ -15,24 +15,48 @@ print(ROOT_DIR)
 API_KEY = "YLbKyqzkET5SFMR37R7JiL4u2YdXQD3U"
 
 def convert_video_to_audio(video_path):
-    video = VideoFileClip(video_path)
-    audio_path = "temp_audio.wav"
-    video.audio.write_audiofile(audio_path)
-    return audio_path
+    try:
+        video = VideoFileClip(video_path)
+        audio_path = "temp_audio.wav"
+        video.audio.write_audiofile(audio_path, codec='pcm_s16le')  # Specify a compatible codec for WAV format
+        return audio_path
+    except Exception as e:
+        print("Error converting video to audio:", str(e))
+        return None
 
 def normalize_audio(audio_path):
-    y, sr = librosa.load(audio_path, sr=None)
-    y = librosa.util.normalize(y)
-    normalized_audio_path = "temp_normalized.wav"
-    sf.write(normalized_audio_path, y, sr)
-    return normalized_audio_path
+    try:
+        # Load audio file using librosa
+        y, sr = librosa.load(audio_path, sr=None)
+        
+        # Perform normalization
+        y = librosa.util.normalize(y)
+        
+        # Save normalized audio to a new file
+        normalized_audio_path = "temp_normalized.wav"
+        sf.write(normalized_audio_path, y, sr)
+        
+        return normalized_audio_path
+    except Exception as e:
+        print("Error normalizing audio:", str(e))
+        return None
 
 def clean_audio(normalized_audio_path):
-    y, sr = librosa.load(normalized_audio_path, sr=None)
-    y_trimmed, _ = librosa.effects.trim(y)
-    cleaned_audio_path = "temp_cleaned.wav"
-    sf.write(cleaned_audio_path, y_trimmed, sr)
-    return cleaned_audio_path
+    # Check if the file exists
+    if not os.path.exists(normalized_audio_path):
+        print("Error: File does not exist at path:", normalized_audio_path)
+        return None
+    
+    # Attempt to load the audio file using librosa
+    try:
+        y, sr = librosa.load(normalized_audio_path, sr=None)
+        y_trimmed, _ = librosa.effects.trim(y)
+        cleaned_audio_path = "temp_cleaned.wav"
+        sf.write(cleaned_audio_path, y_trimmed, sr)
+        return cleaned_audio_path
+    except Exception as e:
+        print("Error cleaning audio:", str(e))
+        return None
 
 def upload_to_cleanvoice(cleaned_audio_path):
     url = 'https://api.cleanvoice.ai/v2/upload?filename=audio.wav'
