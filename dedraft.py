@@ -23,13 +23,23 @@ def convert_video_to_audio(video_path):
     except Exception as e:
         print("Error converting video to audio:", str(e))
         return None
-        
+
 def normalize_audio(audio_path):
-    y, sr = librosa.load(audio_path, sr=None)
-    y = librosa.util.normalize(y)
-    normalized_audio_path = "temp_normalized.wav"
-    sf.write(normalized_audio_path, y, sr)
-    return normalized_audio_path
+    try:
+        # Load audio file using librosa
+        y, sr = librosa.load(audio_path, sr=None)
+        
+        # Perform normalization
+        y = librosa.util.normalize(y)
+        
+        # Save normalized audio to a new file
+        normalized_audio_path = "temp_normalized.wav"
+        sf.write(normalized_audio_path, y, sr)
+        
+        return normalized_audio_path
+    except Exception as e:
+        print("Error normalizing audio:", str(e))
+        return None
 
 def clean_audio(normalized_audio_path):
     y, sr = librosa.load(normalized_audio_path, sr=None)
